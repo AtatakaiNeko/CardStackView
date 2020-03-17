@@ -3,6 +3,8 @@ package com.yuyakaido.android.cardstackview;
 import android.content.Context;
 import android.graphics.PointF;
 import android.os.Handler;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Interpolator;
@@ -10,6 +12,7 @@ import android.view.animation.Interpolator;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.yuyakaido.android.cardstackview.internal.CardStackSetting;
@@ -29,6 +32,14 @@ public class CardStackLayoutManager
     private CardStackSetting setting = new CardStackSetting();
     private CardStackState state = new CardStackState();
 
+    /**
+     * When LayoutManager needs to scroll to a position, it sets this variable and requests a
+     * layout which will check this variable and re-layout accordingly.
+     */
+    int pendingScrollPosition = RecyclerView.NO_POSITION;
+
+    SavedState pendingSavedState = null;
+
     public CardStackLayoutManager(Context context) {
         this(context, CardStackListener.DEFAULT);
     }
@@ -47,14 +58,37 @@ public class CardStackLayoutManager
     }
 
     @Override
-    public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State s) {
-        update(recycler);
-        if (s.didStructureChange()) {
-            View topView = getTopView();
-            if (topView != null) {
-                listener.onCardAppeared(getTopView(), state.topPosition);
+    public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
+        if (pendingSavedState != null || pendingScrollPosition != RecyclerView.NO_POSITION) {
+            if (state.getItemCount() == 0) {
+                removeAndRecycleAllViews(recycler);
+                return;
             }
         }
+
+        if (pendingSavedState != null && pendingSavedState.hasValidAnchor()) {
+            pendingScrollPosition = pendingSavedState.anchorPosition;
+        }
+
+        if (pendingScrollPosition != RecyclerView.NO_POSITION && pendingScrollPosition < state.getItemCount()) {
+            this.state.topPosition = pendingScrollPosition;
+        }
+
+        update(recycler);
+        if (state.didStructureChange()) {
+            View topView = getTopView();
+            if (topView != null) {
+                listener.onCardAppeared(getTopView(), this.state.topPosition);
+            }
+        }
+    }
+
+    @Override
+    public void onLayoutCompleted(RecyclerView.State state) {
+        super.onLayoutCompleted(state);
+        super.onLayoutCompleted(state);
+        pendingSavedState = null; // we don't need this anymore
+        pendingScrollPosition = RecyclerView.NO_POSITION;
     }
 
     @Override
@@ -638,4 +672,73 @@ public class CardStackLayoutManager
         setting.overlayInterpolator = overlayInterpolator;
     }
 
+    @Nullable
+    @Override
+    public Parcelable onSaveInstanceState() {
+        if (pendingSavedState != null) {
+            return new SavedState(pendingSavedState);
+        }
+        SavedState state = new SavedState();
+        if (getChildCount() > 0) {
+            state.anchorPosition = this.state.topPosition;
+        } else {
+            state.invalidateAnchor();
+        }
+        return state;
+    }
+
+    @Override
+    public void onRestoreInstanceState(Parcelable state) {
+        if (state instanceof SavedState) {
+            pendingSavedState = (SavedState) state;
+            requestLayout();
+        }
+    }
+
+    public static class SavedState implements Parcelable {
+
+        int anchorPosition;
+
+        public SavedState() {
+
+        }
+
+        SavedState(Parcel in) {
+            anchorPosition = in.readInt();
+        }
+
+        public SavedState(SavedState other) {
+            anchorPosition = other.anchorPosition;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeInt(anchorPosition);
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        boolean hasValidAnchor() {
+            return anchorPosition > 0;
+        }
+
+        void invalidateAnchor() {
+            anchorPosition = RecyclerView.NO_POSITION;
+        }
+
+        public static final Creator<SavedState> CREATOR = new Creator<SavedState>() {
+            @Override
+            public SavedState createFromParcel(Parcel in) {
+                return new SavedState(in);
+            }
+
+            @Override
+            public SavedState[] newArray(int size) {
+                return new SavedState[size];
+            }
+        };
+    }
 }
