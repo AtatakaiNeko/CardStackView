@@ -3,7 +3,7 @@ package com.yuyakaido.android.cardstackview;
 import android.view.View;
 
 public interface CardStackListener {
-    void onCardDragging(Direction direction, float ratio);
+    void onCardDragging(Direction direction, float ratio, boolean isFake);
     void onCardSwiped(Direction direction, int swipedPosition);
     void onCardRewound();
     void onCardCanceled();
@@ -12,7 +12,7 @@ public interface CardStackListener {
 
     CardStackListener DEFAULT = new CardStackListener() {
         @Override
-        public void onCardDragging(Direction direction, float ratio) {}
+        public void onCardDragging(Direction direction, float ratio, boolean isFake) {}
         @Override
         public void onCardSwiped(Direction direction, int swipedPosition) {}
         @Override

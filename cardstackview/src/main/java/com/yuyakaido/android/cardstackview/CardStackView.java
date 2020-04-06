@@ -56,6 +56,7 @@ public class CardStackView extends RecyclerView {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             CardStackLayoutManager manager = (CardStackLayoutManager) getLayoutManager();
             if (manager != null) {
+                manager.stopFakeDrag();
                 manager.updateProportion(event.getX(), event.getY());
             }
         }
