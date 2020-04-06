@@ -17,6 +17,7 @@ public class CardStackState {
     public enum Status {
         Idle,
         Dragging,
+        FakeDragging,
         RewindAnimating,
         AutomaticSwipeAnimating,
         AutomaticSwipeAnimated,
@@ -28,7 +29,7 @@ public class CardStackState {
         }
 
         public boolean isDragging() {
-            return this == Dragging;
+            return this == Dragging || this == FakeDragging;
         }
 
         public boolean isSwipeAnimating() {

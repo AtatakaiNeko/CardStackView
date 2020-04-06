@@ -109,13 +109,8 @@ public class CardStackLayoutManager
 
         switch (state.status) {
             case Idle:
-                if (setting.swipeableMethod.canSwipeManually()) {
-                    state.dx -= dx;
-                    update(recycler);
-                    return dx;
-                }
-                break;
             case Dragging:
+            case ManualSwipeAnimating:
                 if (setting.swipeableMethod.canSwipeManually()) {
                     state.dx -= dx;
                     update(recycler);
@@ -123,6 +118,7 @@ public class CardStackLayoutManager
                 }
                 break;
             case RewindAnimating:
+            case FakeDragging:
                 state.dx -= dx;
                 update(recycler);
                 return dx;
@@ -134,14 +130,6 @@ public class CardStackLayoutManager
                 }
                 break;
             case AutomaticSwipeAnimated:
-                break;
-            case ManualSwipeAnimating:
-                if (setting.swipeableMethod.canSwipeManually()) {
-                    state.dx -= dx;
-                    update(recycler);
-                    return dx;
-                }
-                break;
             case ManualSwipeAnimated:
                 break;
         }
@@ -282,6 +270,23 @@ public class CardStackLayoutManager
         }
     }
 
+    public void startFakeDrag(float y) {
+        if (state.status == CardStackState.Status.Idle) {
+            state.next(CardStackState.Status.FakeDragging);
+            updateProportion(0, y);
+        }
+    }
+
+    public void stopFakeDrag() {
+        state.dx = 0;
+        state.dy = 0;
+        state.next(CardStackState.Status.Idle);
+    }
+
+    public boolean isFakeDragging() {
+        return state.status == CardStackState.Status.FakeDragging;
+    }
+
     private void update(RecyclerView.Recycler recycler) {
         state.width = getWidth();
         state.height = getHeight();
@@ -387,7 +392,7 @@ public class CardStackLayoutManager
         }
 
         if (state.status.isDragging()) {
-            listener.onCardDragging(state.getDirection(), state.getRatio());
+            listener.onCardDragging(state.getDirection(), state.getRatio(), isFakeDragging());
         }
     }
 
