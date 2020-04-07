@@ -281,6 +281,14 @@ public class CardStackLayoutManager
         state.dx = 0;
         state.dy = 0;
         state.next(CardStackState.Status.Idle);
+        View topView = getTopView();
+        if (topView != null) {
+            resetTranslation(topView);
+            resetScale(topView);
+            resetOverlay(topView);
+            resetRotation(topView);
+        }
+        listener.onCardDragging(state.getDirection(), 0, false);
     }
 
     public boolean isFakeDragging() {
