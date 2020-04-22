@@ -72,6 +72,9 @@ public class CardStackState {
         int absDx = Math.abs(dx);
         int absDy = Math.abs(dy);
         float ratio;
+        if (height == 0 || width == 0) {
+            return 0f;
+        }
         if (absDx < absDy) {
             ratio = absDy / (height / 2.0f);
         } else {
