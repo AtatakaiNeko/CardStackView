@@ -37,17 +37,20 @@ public class CardStackView extends RecyclerView {
     }
 
     @Override
-    public void setAdapter(Adapter adapter) {
+    public void setAdapter(@Nullable Adapter adapter) {
         if (getLayoutManager() == null) {
             setLayoutManager(new CardStackLayoutManager(getContext()));
         }
         // Imitate RecyclerView's implementation
         // http://tools.oesf.biz/android-9.0.0_r1.0/xref/frameworks/base/core/java/com/android/internal/widget/RecyclerView.java#1005
-        if (getAdapter() != null) {
-            getAdapter().unregisterAdapterDataObserver(observer);
-            getAdapter().onDetachedFromRecyclerView(this);
+        final Adapter oldAdapter = getAdapter();
+        if (oldAdapter != null) {
+            oldAdapter.unregisterAdapterDataObserver(observer);
+            oldAdapter.onDetachedFromRecyclerView(this);
         }
-        adapter.registerAdapterDataObserver(observer);
+        if(adapter != null) {
+            adapter.registerAdapterDataObserver(observer);
+        }
         super.setAdapter(adapter);
     }
 
